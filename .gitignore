@@ -1,0 +1,11 @@
+# creds
+.env
+credentials.json
+*.pem
+*.key
+
+# OS generate files
+.DS_Store
+
+# others
+*.log
