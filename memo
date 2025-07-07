@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# confirm arguments
+if [ -z "$1" ]; then
+  echo "usage: memo <directory_name>"
+  exit 1
+fi
+
+DIR_NAME="$1"
+BASE_DIR="$HOME/work/notes"
+TARGET_DIR="$BASE_DIR/$DIR_NAME"
+FILE_PATH="$TARGET_DIR/$DIR_NAME.md"
+
+# create a directory
+mkdir -p "$TARGET_DIR"
+
+# create a markdown .md file
+touch "$FILE_PATH"
+
+# echo -n "$FILE_PATH" | pbcopy
+# copy the full path to the created directroy
+echo -n "$TARGET_DIR" | pbcopy
+
+echo "directory '$TARGET_DIR' created."
+echo "file '$FILE_PATH' created."
+echo "full path to the file is copied to your clipboard."

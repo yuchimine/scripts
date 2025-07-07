@@ -1,0 +1,98 @@
+#!/bin/bash
+
+# No arguments: output current epoch milliseconds and copy to clipboard
+if [ $# -eq 0 ]; then
+    epoch_milliseconds="$(date +%s)000"
+    echo "$epoch_milliseconds" | pbcopy
+    echo "$epoch_milliseconds (copied!)"
+    exit 0
+fi
+
+# Join all arguments into one string (so multi-word inputs aren’t split)
+arg="$*"
+
+# Case 0: help
+if [[ "$arg" == "help" ]]; then
+    cat << 'EOF'
+available argument examples:
+
+  1751608870000
+  1751608870
+  # Converts the time to JST/UTC.  
+
+  15:00
+  7/4 15:00
+  2025 7/4 15:00
+  # Converts the time to epoch millisecond and UTC
+
+  [No arguments]
+  # Outputs epoch millisecond of the current time
+
+  # Note: The result will be copied to you clipboard
+EOF
+    exit 0
+fi
+
+# Case 1: 10-digit epoch seconds (e.g. starts with “17…”): convert to milliseconds,
+#         display JST time, and notify that conversion was applied
+if [[ "$arg" =~ ^17[0-9]{8}$ ]]; then
+    epoch_millis=$((arg * 1000))
+    jst_time=$(TZ="Asia/Tokyo" date -r "$arg" +"%Y-%m-%d %H:%M:%S %Z")
+    echo "Input appears to be in seconds; converted to milliseconds by multiplying by 1000: $epoch_millis"
+    echo "$jst_time" | pbcopy
+    echo "$jst_time (copied!)"
+    exit 0
+fi
+
+# Case 2: HH:MM format — interpret as today's JST time, set seconds to 00,
+#         output epoch milliseconds and show UTC time
+if [[ "$arg" =~ ^[0-9]{1,2}:[0-9]{2}$ ]]; then
+    date_jst=$(TZ="Asia/Tokyo" date +"%Y-%m-%d")
+    datetime="${date_jst} ${arg}:00"
+    epoch_sec=$(TZ="Asia/Tokyo" date -j -f "%Y-%m-%d %H:%M:%S" "$datetime" +"%s")
+    epoch_millis=$((epoch_sec * 1000))
+    utc_time=$(TZ="UTC" date -r "$epoch_sec" +"%Y-%m-%d %H:%M:%S %Z")
+    echo "$epoch_millis" | pbcopy
+    echo "Epoch milliseconds for ${datetime} JST: $epoch_millis (copied!)"
+    echo "UTC time: $utc_time"
+    exit 0
+fi
+
+# Case 3: M/D HH:MM format — interpret as this year's JST date/time, set seconds to 00,
+#         output epoch milliseconds and show UTC time
+if [[ "$arg" =~ ^[0-9]{1,2}\/[0-9]{1,2}\ [0-9]{1,2}:[0-9]{2}$ ]]; then
+    month_day=$(awk '{print $1}' <<< "$arg")
+    time_jst=$(awk '{print $2}' <<< "$arg")
+    year=$(TZ="Asia/Tokyo" date +"%Y")
+    datetime="${year}/${month_day} ${time_jst}:00"
+    epoch_sec=$(TZ="Asia/Tokyo" date -j -f "%Y/%m/%d %H:%M:%S" "$datetime" +"%s")
+    epoch_millis=$((epoch_sec * 1000))
+    utc_time=$(TZ="UTC" date -r "$epoch_sec" +"%Y-%m-%d %H:%M:%S %Z")
+    echo "$epoch_millis" | pbcopy
+    echo "Epoch milliseconds for ${datetime} JST: $epoch_millis (copied!)"
+    echo "UTC time: $utc_time"
+    exit 0
+fi
+
+# Case 4: YYYY M/D HH:MM format — interpret as specified JST date/time, set seconds to 00,
+#         output epoch milliseconds and show UTC time
+if [[ "$arg" =~ ^[0-9]{4}\ [0-9]{1,2}\/[0-9]{1,2}\ [0-9]{1,2}:[0-9]{2}$ ]]; then
+    IFS=' ' read -r year month_day time_jst <<< "$arg"
+    datetime="${year}/${month_day} ${time_jst}:00"
+    epoch_sec=$(TZ="Asia/Tokyo" date -j -f "%Y/%m/%d %H:%M:%S" "$datetime" +"%s")
+    epoch_millis=$((epoch_sec * 1000))
+    utc_time=$(TZ="UTC" date -r "$epoch_sec" +"%Y-%m-%d %H:%M:%S %Z")
+    echo "$epoch_millis" | pbcopy
+    echo "Epoch milliseconds for ${datetime} JST: $epoch_millis (copied!)"
+    echo "UTC time: $utc_time"
+    exit 0
+fi
+
+# Fallback: treat argument as epoch milliseconds, convert to JST
+timestamp_sec=$((arg / 1000))
+jst_str=$(TZ="Asia/Tokyo" date -r "$timestamp_sec" +"%Y-%m-%d %H:%M:%S")
+jst_disp="${jst_str} JST"
+utc_time=$(TZ="UTC" date -r "$timestamp_sec" +"%Y-%m-%d %H:%M:%S %Z")
+echo "$jst_str" | pbcopy
+echo "$jst_disp (copied!)"
+echo "UTC time: $utc_time"
