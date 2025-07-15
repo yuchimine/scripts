@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+# Usage:
+#   ./decode_pem <base64-string>
+#
+# Example:
+#   ./decode_pem 'MIIG2TCCBcGgAwIBAgIJAKlRYilsW86pMA0GC...SqGSIb3=.'
+
+set -eo pipefail
+
+if [ "$#" -ne 1 ]; then
+  cat << 'USAGE'
+# Usage: ./decode_pem <base64-string>
+# Example:
+#   ./decode_pem 'MIIG2TCCBcGgAwIBAgIJAKlRYilsW86pMA0GC...SqGSIb3=.'
+USAGE
+  exit 1
+fi
+
+# Decode Base64 input and display certificate details
+printf "%s" "$1" \
+  | openssl base64 -A -d \
+  | openssl x509 -inform der -text -noout
