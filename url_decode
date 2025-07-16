@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+# Usage:
+#   ./url_decode <url_encoded_string>
+#
+# Example:
+#   ./url_decode 'abc%3D'
+
+set -eo pipefail
+
+if [ "$#" -ne 1 ]; then
+  cat << 'USAGE'
+# Usage:
+#   ./url_decode <url_encoded_string>
+# Example:
+#   ./url_decode 'abc%3D'
+USAGE
+  exit 1
+fi
+
+# Decode Base64 input and display 
+printf "%s" "$1" \
+  | python3 -c 'import sys, urllib.parse as u; print(u.unquote_plus(sys.stdin.read().strip()))'
